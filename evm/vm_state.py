@@ -254,14 +254,14 @@ class BaseVMState(Configurable, metaclass=ABCMeta):
         # Don't modify the given block
         block.make_immutable()
         self.set_state_root(block.header.state_root)
-        computation = self.execute_transaction(transaction)
+        computation, receipt = self.execute_transaction(transaction)
 
         # Set block.
-        block, trie_data_dict = self.add_transaction(transaction, computation, block)
+        block, trie_data_dict = self.add_transaction(transaction, computation, block, receipt)
         block.header.state_root = self.state_root
         return computation, block, trie_data_dict
 
-    def add_transaction(self, transaction, computation, block):
+    def add_transaction(self, transaction, computation, block, receipt):
         """
         Add a transaction to the given block and
         return `trie_data` to store the transaction data in chaindb in VM layer.
@@ -279,7 +279,6 @@ class BaseVMState(Configurable, metaclass=ABCMeta):
         :return: the block and the trie_data
         :rtype: (Block, dict[bytes, bytes])
         """
-        receipt = self.make_receipt(transaction, computation)
         self.add_receipt(receipt)
 
         # Create a new Block object
@@ -312,13 +311,6 @@ class BaseVMState(Configurable, metaclass=ABCMeta):
 
     def add_receipt(self, receipt):
         self.receipts.append(receipt)
-
-    @abstractmethod
-    def make_receipt(self, transaction, computation):
-        """
-        Make receipt.
-        """
-        raise NotImplementedError("Must be implemented by subclasses")
 
     #
     # Finalization
@@ -373,7 +365,17 @@ class BaseTransactionExecutor(metaclass=ABCMeta):
         """
         message = self.run_pre_computation(transaction)
         computation = self.run_computation(transaction, message)
-        return self.run_post_computation(transaction, computation)
+        computation = self.run_post_computation(transaction, computation)
+        receipt = self.make_receipt(transaction, computation)
+
+        return computation, receipt
+
+    @abstractmethod
+    def make_receipt(self, transaction, computation):
+        """
+        Make receipt.
+        """
+        raise NotImplementedError('Must be implemented by subclasses')
 
     @abstractmethod
     def run_pre_computation(self, transaction):

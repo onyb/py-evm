@@ -206,7 +206,7 @@ class ShardingVMState(ShardingTransactionExecutor, ByzantiumVMState):
     def validate_transaction(self, transaction):
         validate_sharding_transaction(self, transaction)
 
-    def add_transaction(self, transaction, computation, block):
+    def add_transaction(self, transaction, computation, block, receipt):
         """
         Add a transaction to the given block and
         return `trie_data` to store the transaction data in chaindb in VM layer.
@@ -224,7 +224,6 @@ class ShardingVMState(ShardingTransactionExecutor, ByzantiumVMState):
         :return: the block and the trie_data
         :rtype: (Block, dict[bytes, bytes])
         """
-        receipt = self.make_receipt(transaction, computation)
         self.add_receipt(receipt)
 
         # Create a new Block object

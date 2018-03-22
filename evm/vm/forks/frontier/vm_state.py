@@ -185,33 +185,29 @@ class FrontierTransactionExecutor(BaseTransactionExecutor):
 
         return computation
 
+    def make_receipt(self, transaction, computation):
 
-def _make_frontier_receipt(vm_state, transaction, computation):
-    # Reusable for other forks
+        logs = [
+            Log(address, topics, data)
+            for address, topics, data
+            in computation.get_log_entries()
+        ]
 
-    logs = [
-        Log(address, topics, data)
-        for address, topics, data
-        in computation.get_log_entries()
-    ]
+        gas_remaining = computation.get_gas_remaining()
+        gas_refund = computation.get_gas_refund()
+        tx_gas_used = (
+                          transaction.gas - gas_remaining
+                      ) - min(
+            gas_refund,
+            (transaction.gas - gas_remaining) // 2,
+        )
+        gas_used = self.gas_used + tx_gas_used
 
-    gas_remaining = computation.get_gas_remaining()
-    gas_refund = computation.get_gas_refund()
-    tx_gas_used = (
-        transaction.gas - gas_remaining
-    ) - min(
-        gas_refund,
-        (transaction.gas - gas_remaining) // 2,
-    )
-    gas_used = vm_state.gas_used + tx_gas_used
-
-    receipt = Receipt(
-        state_root=vm_state.state_root,
-        gas_used=gas_used,
-        logs=logs,
-    )
-
-    return receipt
+        return Receipt(
+            state_root=self.state_root,
+            gas_used=gas_used,
+            logs=logs,
+        )
 
 
 class FrontierVMState(BaseVMState, FrontierTransactionExecutor):
@@ -219,10 +215,6 @@ class FrontierVMState(BaseVMState, FrontierTransactionExecutor):
     computation_class = FrontierComputation
     trie_class = HexaryTrie
     transaction_context_class = FrontierTransactionContext  # type: Type[BaseTransactionContext]
-
-    def make_receipt(self, transaction, computation):
-        receipt = _make_frontier_receipt(self, transaction, computation)
-        return receipt
 
     def validate_transaction(self, transaction):
         validate_frontier_transaction(self, transaction)
