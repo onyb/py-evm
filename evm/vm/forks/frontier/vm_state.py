@@ -196,8 +196,8 @@ class FrontierTransactionExecutor(BaseTransactionExecutor):
         gas_remaining = computation.get_gas_remaining()
         gas_refund = computation.get_gas_refund()
         tx_gas_used = (
-                          transaction.gas - gas_remaining
-                      ) - min(
+            transaction.gas - gas_remaining
+        ) - min(
             gas_refund,
             (transaction.gas - gas_remaining) // 2,
         )
