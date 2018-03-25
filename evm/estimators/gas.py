@@ -9,7 +9,7 @@ from evm.utils.spoof import (
 
 @curry
 def execute_plus_buffer(multiplier, state, transaction):
-    computation = state.execute_transaction(transaction)
+    computation, _ = state.execute_transaction(transaction)
 
     if computation.is_error:
         raise computation._error
@@ -26,7 +26,7 @@ double_execution_cost = execute_plus_buffer(2)
 
 def _get_computation_error(state, transaction):
     snapshot = state.snapshot()
-    computation = state.execute_transaction(transaction)
+    computation, _ = state.execute_transaction(transaction)
     state.revert(snapshot)
 
     if computation.is_error:
